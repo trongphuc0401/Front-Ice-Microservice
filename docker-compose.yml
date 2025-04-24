@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8079:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - microservice-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 384m
+    profiles: [ "gateway", "all" ]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://maglev.proxy.rlwy.net:29797/railway
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=xVgvyMZKoYspruiIOHgroRNTAQCnJXQT
+      - SPRING_DATA_REDIS_HOST=switchback.proxy.rlwy.net
+      - SPRING_DATA_REDIS_PORT=12451
+      - SPRING_DATA_REDIS_PASSWORD=FGEOeXOzIlOvvTVAGOMCcCnlVoFatnBN
+      - KAFKA_SERVERS=kafka:9092
+      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      - JWT_SECRET=v9y$B&E)H@MbQeThWmZq4t7w!z%C*F-JaNdRfUjXn2r5u8x/A?D(G+KbPeShVkYp
+      - GOOGLE_CLIENT_ID=your_google_client_id
+      - GOOGLE_CLIENT_SECRET=your_google_client_secret
+    networks:
+      - microservice-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/api/auth/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 384m
+    profiles: [ "auth", "all" ]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+networks:
+  microservice-net:
+    external: true
